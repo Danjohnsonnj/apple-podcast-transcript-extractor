@@ -11,11 +11,50 @@ document.addEventListener("DOMContentLoaded", () => {
 	const searchInput = document.getElementById("search-input");
 	const resultCount = document.getElementById("result-count");
 	const resultsContainer = document.getElementById("results-container");
+	const transcriptManagement = document.getElementById("transcript-management");
+	const episodeCountEl = document.getElementById("episode-count");
+	const clearAllBtn = document.getElementById("clear-all-btn");
 
 	// State
 	let db = null; // SQLite database instance
 	let episodeMap = new Map(); // Maps asset ID -> episode metadata
 	let episodes = []; // Loaded transcript data
+
+	// =====================
+	// Transcript Management
+	// =====================
+
+	clearAllBtn.addEventListener("click", () => {
+		if (episodes.length === 0) return;
+
+		if (confirm(`Remove all ${episodes.length} transcript(s)?`)) {
+			episodes = [];
+			updateTranscriptUI();
+		}
+	});
+
+	function removeEpisode(episodeId) {
+		episodes = episodes.filter((ep) => ep.id !== episodeId);
+		updateTranscriptUI();
+	}
+
+	function updateTranscriptUI() {
+		resultsContainer.innerHTML = "";
+		resultCount.textContent = "";
+		searchInput.value = "";
+
+		if (episodes.length === 0) {
+			searchSection.style.display = "none";
+			transcriptManagement.style.display = "none";
+		} else {
+			searchSection.style.display = "flex";
+			transcriptManagement.style.display = "flex";
+			episodeCountEl.textContent = `${episodes.length} transcript${
+				episodes.length !== 1 ? "s" : ""
+			} loaded`;
+			episodes.forEach((ep) => renderEpisode(ep));
+		}
+	}
 
 	// =====================
 	// Database Handling
@@ -395,8 +434,12 @@ document.addEventListener("DOMContentLoaded", () => {
 		// Add to state
 		episodes.push(episode);
 
-		// Show search section
+		// Show management and search sections
 		searchSection.style.display = "flex";
+		transcriptManagement.style.display = "flex";
+		episodeCountEl.textContent = `${episodes.length} transcript${
+			episodes.length !== 1 ? "s" : ""
+		} loaded`;
 
 		// Render
 		renderEpisode(episode);
@@ -474,16 +517,32 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Search Functionality
 	// =====================
 
-	let searchTimeout;
-	searchInput.addEventListener("input", () => {
-		clearTimeout(searchTimeout);
-		searchTimeout = setTimeout(() => {
-			performSearch(searchInput.value.trim());
-		}, 200);
+	const searchBtn = document.getElementById("search-btn");
+	const stopBtn = document.getElementById("stop-btn");
+	let searchCancelled = false;
+	let isSearching = false;
+
+	// Search on button click
+	searchBtn.addEventListener("click", () => {
+		performSearch(searchInput.value.trim());
 	});
 
-	function performSearch(query) {
+	// Search on Enter key
+	searchInput.addEventListener("keydown", (e) => {
+		if (e.key === "Enter") {
+			performSearch(searchInput.value.trim());
+		}
+	});
+
+	// Stop button
+	stopBtn.addEventListener("click", () => {
+		searchCancelled = true;
+	});
+
+	async function performSearch(query) {
+		// Reset UI
 		resultsContainer.innerHTML = "";
+		searchCancelled = false;
 
 		if (!query) {
 			resultCount.textContent = "";
@@ -491,11 +550,24 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
+		// Show searching state
+		isSearching = true;
+		searchBtn.disabled = true;
+		stopBtn.style.display = "inline-block";
+		resultCount.textContent = "Searching...";
+
 		const lowerQuery = query.toLowerCase();
 		let totalMatches = 0;
 		let matchingEpisodes = 0;
+		let processed = 0;
 
-		episodes.forEach((episode) => {
+		for (const episode of episodes) {
+			// Check if cancelled
+			if (searchCancelled) {
+				resultCount.textContent = `Search stopped. Found ${totalMatches} matches in ${matchingEpisodes} files (${processed}/${episodes.length} searched)`;
+				break;
+			}
+
 			const matchingLines = episode.lines.filter((line) =>
 				line.text.toLowerCase().includes(lowerQuery)
 			);
@@ -505,9 +577,25 @@ document.addEventListener("DOMContentLoaded", () => {
 				totalMatches += matchingLines.length;
 				renderEpisode(episode, query, matchingLines);
 			}
-		});
 
-		resultCount.textContent = `${totalMatches} matches in ${matchingEpisodes} files`;
+			processed++;
+
+			// Update progress and yield to UI every 10 episodes
+			if (processed % 10 === 0) {
+				resultCount.textContent = `Searching... (${processed}/${episodes.length})`;
+				await new Promise((resolve) => setTimeout(resolve, 0));
+			}
+		}
+
+		// Final results
+		if (!searchCancelled) {
+			resultCount.textContent = `${totalMatches} matches in ${matchingEpisodes} files`;
+		}
+
+		// Reset UI state
+		isSearching = false;
+		searchBtn.disabled = false;
+		stopBtn.style.display = "none";
 	}
 
 	// =====================
@@ -535,7 +623,14 @@ document.addEventListener("DOMContentLoaded", () => {
 			return escapeHtml(text).replace(regex, "<mark>$1</mark>");
 		};
 
+		// Determine if transcript should be expanded (auto-expand when searching)
+		const isExpanded = query !== "";
+		const expandedClass = isExpanded ? "expanded" : "";
+		const collapsedClass = isExpanded ? "" : "collapsed";
+		const toggleText = isExpanded ? "Hide transcript" : "Show transcript";
+
 		card.innerHTML = `
+            <button class="remove-episode-btn" title="Remove this transcript" aria-label="Remove transcript">&times;</button>
             <div class="meta-header">
                 ${
 									artworkUrl
@@ -558,7 +653,12 @@ document.addEventListener("DOMContentLoaded", () => {
 										}
                 </div>
             </div>
-            <div class="transcript-content">
+            <button class="transcript-toggle ${expandedClass}" aria-expanded="${isExpanded}">
+                <span class="chevron">▶</span>
+                <span class="toggle-text">${toggleText}</span>
+                <span class="line-count">(${displayLines.length} lines)</span>
+            </button>
+            <div class="transcript-content ${collapsedClass}">
                 ${
 									displayLines.length === 0
 										? "<p>No transcript content found.</p>"
@@ -576,7 +676,34 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         `;
 
+		// Add toggle event listener
+		const toggleBtn = card.querySelector(".transcript-toggle");
+		const transcriptContent = card.querySelector(".transcript-content");
+		const toggleTextSpan = card.querySelector(".toggle-text");
+
+		toggleBtn.addEventListener("click", () => {
+			const isCurrentlyExpanded = toggleBtn.classList.contains("expanded");
+
+			if (isCurrentlyExpanded) {
+				toggleBtn.classList.remove("expanded");
+				transcriptContent.classList.add("collapsed");
+				toggleBtn.setAttribute("aria-expanded", "false");
+				toggleTextSpan.textContent = "Show transcript";
+			} else {
+				toggleBtn.classList.add("expanded");
+				transcriptContent.classList.remove("collapsed");
+				toggleBtn.setAttribute("aria-expanded", "true");
+				toggleTextSpan.textContent = "Hide transcript";
+			}
+		});
+
 		resultsContainer.appendChild(card);
+
+		// Add remove button event listener
+		const removeBtn = card.querySelector(".remove-episode-btn");
+		removeBtn.addEventListener("click", () => {
+			removeEpisode(episode.id);
+		});
 	}
 
 	function escapeHtml(text) {

@@ -203,8 +203,100 @@ h2 {
     white-space: nowrap;
 }
 
+/* Buttons */
+.btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #0066cc;
+}
+
+.btn-danger {
+    background: #ff3b30;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #e0342b;
+}
+
+.search-progress {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Transcript Management */
+.transcript-management {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.episode-count {
+    font-weight: 500;
+    color: var(--text);
+}
+
+.btn-secondary {
+    background: #e5e5ea;
+    color: var(--text);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #d1d1d6;
+}
+
+/* Remove Episode Button */
+.remove-episode-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: #f0f0f0;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.remove-episode-btn:hover {
+    background: #ff3b30;
+    color: white;
+}
+
 /* Episode Cards */
 .episode-card {
+    position: relative;
     background: var(--card-bg);
     border-radius: 12px;
     padding: 1.5rem;
@@ -272,12 +364,47 @@ h2 {
     border-left: 3px solid var(--warning);
 }
 
+/* Transcript Toggle */
+.transcript-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+    border: none;
+    background: none;
+    color: var(--primary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+}
+
+.transcript-toggle:hover {
+    color: #005ec4;
+}
+
+.transcript-toggle .chevron {
+    transition: transform 0.2s ease;
+    font-size: 0.8rem;
+}
+
+.transcript-toggle.expanded .chevron {
+    transform: rotate(90deg);
+}
+
 /* Transcript Content */
 .transcript-content {
     max-height: 400px;
     overflow-y: auto;
     padding-right: 0.5rem;
     font-size: 0.95rem;
+}
+
+.transcript-content.collapsed {
+    display: none;
 }
 
 .line {

@@ -63,9 +63,17 @@
 			</div>
 		</section>
 
+		<!-- Transcript Management -->
+		<section class="transcript-management" id="transcript-management" style="display: none;">
+			<span id="episode-count" class="episode-count">0 transcripts loaded</span>
+			<button id="clear-all-btn" class="btn btn-secondary">Clear All Transcripts</button>
+		</section>
+
 		<!-- Search -->
 		<section class="search-section" id="search-section" style="display: none;">
 			<input type="text" id="search-input" placeholder="Search transcripts..." autocomplete="off">
+			<button id="search-btn" class="btn btn-primary">Search</button>
+			<button id="stop-btn" class="btn btn-danger" style="display: none;">Stop</button>
 			<span id="result-count" class="result-count"></span>
 		</section>
 
