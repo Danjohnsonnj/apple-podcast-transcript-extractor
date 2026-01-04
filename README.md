@@ -14,6 +14,8 @@ A lightweight, client-side web app that extracts and displays transcripts from A
 - **📖 Reading View** – Transcripts grouped into readable paragraphs with speaker labels
 - **⏱️ Timestamped View** – Sentence-by-sentence view with precise timestamps
 - **📋 Copy to Clipboard** – One-click copy of entire transcripts
+- **💾 Export to Markdown** – Download transcripts as clean `.md` files with proper formatting
+- **🎙️ Speaker Renaming** – Click any speaker label to rename (e.g., change `SPEAKER_1` to `Host`)
 - **🎨 Clean UI** – Collapsible transcript cards with podcast artwork
 - **🔒 Privacy-First** – Everything runs locally in your browser, no data leaves your machine
 
@@ -48,7 +50,9 @@ You'll need two things:
 
 - Use the search bar to find text across all loaded transcripts
 - Toggle between 📖 Reading and ⏱️ Timestamped views
+- Click any speaker label to rename it (updates throughout the transcript)
 - Click 📋 to copy a transcript to your clipboard
+- Click 💾 to export as a Markdown file
 
 ## Tech Stack
 

@@ -295,6 +295,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				lines: lines,
 				paragraphs: paragraphs,
 				metadata: metadata,
+				speakerMap: new Map(), // Maps original speaker names to custom names
 			};
 
 			// Add to state
@@ -684,8 +685,15 @@ document.addEventListener("DOMContentLoaded", () => {
 								p.endTime && p.endTime !== p.startTime
 									? `${p.startTime} – ${p.endTime}`
 									: p.startTime;
-							const speakerLabel = p.speaker
-								? `<span class="speaker">${escapeHtml(p.speaker)}:</span> `
+							const displaySpeaker = p.speaker
+								? episode.speakerMap.get(p.speaker) || p.speaker
+								: null;
+							const speakerLabel = displaySpeaker
+								? `<span class="speaker" contenteditable="true" data-original-speaker="${escapeHtml(
+										p.speaker
+								  )}" title="Click to rename speaker">${escapeHtml(
+										displaySpeaker
+								  )}:</span> `
 								: "";
 							return `
 					<div class="paragraph">
@@ -798,13 +806,57 @@ document.addEventListener("DOMContentLoaded", () => {
 			});
 		});
 
+		// Speaker rename functionality
+		const speakerSpans = card.querySelectorAll(".speaker[contenteditable]");
+		speakerSpans.forEach((span) => {
+			span.addEventListener("blur", () => {
+				const originalSpeaker = span.dataset.originalSpeaker;
+				const newName = span.textContent.replace(/:$/, "").trim();
+
+				if (newName && newName !== originalSpeaker) {
+					// Update the speaker map
+					episode.speakerMap.set(originalSpeaker, newName);
+
+					// Update all instances of this speaker in the card
+					card
+						.querySelectorAll(
+							`.speaker[data-original-speaker="${originalSpeaker}"]`
+						)
+						.forEach((s) => {
+							s.textContent = newName + ":";
+						});
+				} else if (!newName || newName === originalSpeaker) {
+					// Reset to original
+					episode.speakerMap.delete(originalSpeaker);
+					card
+						.querySelectorAll(
+							`.speaker[data-original-speaker="${originalSpeaker}"]`
+						)
+						.forEach((s) => {
+							s.textContent = originalSpeaker + ":";
+						});
+				}
+			});
+
+			// Prevent Enter from creating new lines
+			span.addEventListener("keydown", (e) => {
+				if (e.key === "Enter") {
+					e.preventDefault();
+					span.blur();
+				}
+			});
+		});
+
 		// Copy button
 		const copyBtn = card.querySelector(".copy-btn");
 		copyBtn.addEventListener("click", async () => {
-			// Get plain text version of transcript
+			// Get plain text version of transcript with mapped speaker names
 			const plainText = paragraphs
 				.map((p) => {
-					const speaker = p.speaker ? `${p.speaker}: ` : "";
+					const displaySpeaker = p.speaker
+						? episode.speakerMap.get(p.speaker) || p.speaker
+						: null;
+					const speaker = displaySpeaker ? `${displaySpeaker}: ` : "";
 					return speaker + p.text;
 				})
 				.join("\n\n");
@@ -873,16 +925,18 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Generate Markdown from episode paragraphs
 	function generateMarkdown(episode, showName, title) {
 		const paragraphs = episode.paragraphs || [];
+		const speakerMap = episode.speakerMap || new Map();
 		let currentSpeaker = null;
 		let markdown = `# ${escapeMarkdown(title)}\n\n`;
 		markdown += `**Show:** ${escapeMarkdown(showName)}\n\n`;
 		markdown += `---\n\n`;
 
 		paragraphs.forEach((p) => {
-			// Add speaker heading if speaker changes
+			// Add speaker heading if speaker changes (using mapped name if available)
 			if (p.speaker && p.speaker !== currentSpeaker) {
 				currentSpeaker = p.speaker;
-				markdown += `**${escapeMarkdown(p.speaker)}:**\n\n`;
+				const displaySpeaker = speakerMap.get(p.speaker) || p.speaker;
+				markdown += `**${escapeMarkdown(displaySpeaker)}:**\n\n`;
 			}
 
 			markdown += `${escapeMarkdown(p.text)}\n\n`;

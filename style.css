@@ -512,6 +512,24 @@ h2 {
 .speaker {
     font-weight: 600;
     color: var(--primary);
+    cursor: text;
+    padding: 0.1rem 0.25rem;
+    margin: -0.1rem -0.25rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.speaker:hover {
+    background: #e8f4fd;
+    border-color: var(--primary);
+}
+
+.speaker:focus {
+    outline: none;
+    background: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
 }
 
 /* Transcript Views */
