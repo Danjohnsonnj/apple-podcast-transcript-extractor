@@ -36,17 +36,32 @@ You'll need two things:
 | **Database** | `Documents/MTLibrary.sqlite` |
 | **Transcripts** | `Library/Cache/Assets/TTML/` |
 
-### Step 2: Open the App
+### Step 2: Copy Transcript Files (Recommended)
+
+To avoid any potential issues with the Podcasts app cache, copy the TTML files to a working folder first. Open Terminal and run:
+
+```bash
+mkdir -p ~/Documents/podcast-transcripts && find ~/Library/Group\ Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache/Assets/TTML -name "*.ttml" -exec cp -n {} ~/Documents/podcast-transcripts \;
+```
+
+This command:
+- Creates a `podcast-transcripts` folder in your Documents
+- Copies all TTML files from the cache (without overwriting existing files)
+- Works from any directory
+
+> **Tip:** Run this command periodically to grab transcripts for newly downloaded episodes.
+
+### Step 3: Open the App
 
 1. Clone this repo and open `index.html` in your browser, or
 2. Use a local development server (e.g., VS Code Live Server)
 
-### Step 3: Load Your Data
+### Step 4: Load Your Data
 
 1. **Load Database** – Drag and drop `MTLibrary.sqlite` into the first drop zone
-2. **Load Transcripts** – Drag TTML files from the cache folder into the second drop zone
+2. **Load Transcripts** – Drag TTML files from your working folder into the second drop zone
 
-### Step 4: Search & Browse
+### Step 5: Search & Browse
 
 - Use the search bar to find text across all loaded transcripts
 - Toggle between 📖 Reading and ⏱️ Timestamped views
