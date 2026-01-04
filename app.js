@@ -401,51 +401,68 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 
 	function handleTTMLFiles(files) {
+		console.log("handleTTMLFiles called with", files.length, "files");
 		Array.from(files).forEach(processFile);
 	}
 
 	async function processFile(file) {
-		// Extract ID from filename
-		const idMatch = file.name.match(/transcript[_-]?(\d+)/i);
-		const assetId = idMatch ? idMatch[1] : null;
+		console.log("processFile called for:", file.name);
+		try {
+			// Extract ID from filename
+			const idMatch = file.name.match(/transcript[_-]?(\d+)/i);
+			const assetId = idMatch ? idMatch[1] : null;
 
-		console.log(`Processing file: ${file.name}`);
-		console.log(`Extracted asset ID: ${assetId}`);
-		console.log(`Episode map size: ${episodeMap.size}`);
+			console.log(`Processing file: ${file.name}`);
+			console.log(`Extracted asset ID: ${assetId}`);
+			console.log(`Episode map size: ${episodeMap.size}`);
 
-		// Read file content
-		const textContent = await readFileAsText(file);
+			// Read file content
+			console.log("Reading file content...");
+			const textContent = await readFileAsText(file);
+			console.log("File content read, length:", textContent.length);
 
-		// Parse TTML
-		const lines = parseTTML(textContent);
+			// Parse TTML
+			console.log("Parsing TTML...");
+			const lines = parseTTML(textContent);
+			console.log("Parsed", lines.length, "lines");
 
-		// Lookup metadata from database
-		let metadata = null;
-		if (assetId) {
-			metadata = lookupMetadata(assetId);
-			console.log(`Lookup result for ${assetId}:`, metadata);
+			// Group lines into readable paragraphs
+			console.log("Grouping into paragraphs...");
+			const paragraphs = groupIntoParagraphs(lines);
+			console.log("Created", paragraphs.length, "paragraphs");
+
+			// Lookup metadata from database
+			let metadata = null;
+			if (assetId) {
+				metadata = lookupMetadata(assetId);
+				console.log(`Lookup result for ${assetId}:`, metadata);
+			}
+
+			// Create episode object
+			const episode = {
+				id: assetId || file.name,
+				filename: file.name,
+				lines: lines,
+				paragraphs: paragraphs,
+				metadata: metadata,
+			};
+
+			// Add to state
+			episodes.push(episode);
+
+			// Show management and search sections
+			searchSection.style.display = "flex";
+			transcriptManagement.style.display = "flex";
+			episodeCountEl.textContent = `${episodes.length} transcript${
+				episodes.length !== 1 ? "s" : ""
+			} loaded`;
+
+			// Render
+			renderEpisode(episode);
+			console.log("Successfully rendered episode:", episode.id);
+		} catch (error) {
+			console.error("Error processing file:", file.name, error);
 		}
-
-		// Create episode object
-		const episode = {
-			id: assetId || file.name,
-			filename: file.name,
-			lines: lines,
-			metadata: metadata,
-		};
-
-		// Add to state
-		episodes.push(episode);
-
-		// Show management and search sections
-		searchSection.style.display = "flex";
-		transcriptManagement.style.display = "flex";
-		episodeCountEl.textContent = `${episodes.length} transcript${
-			episodes.length !== 1 ? "s" : ""
-		} loaded`;
-
-		// Render
-		renderEpisode(episode);
 	}
 
 	function readFileAsText(file) {
@@ -462,37 +479,125 @@ document.addEventListener("DOMContentLoaded", () => {
 		const xmlDoc = parser.parseFromString(xmlString, "text/xml");
 		const lines = [];
 
-		// Look for <p> or <span> tags with timing attributes
-		const elements = xmlDoc.querySelectorAll("p[begin], span[begin]");
+		// Apple Podcasts TTML structure:
+		// <p> (with ttm:agent for speaker) contains
+		//   <span podcasts:unit="sentence"> contains
+		//     <span podcasts:unit="word"> for each word
 
-		elements.forEach((el) => {
-			const begin = el.getAttribute("begin");
-			const text = el.textContent.trim();
+		// First, try to find sentence-level spans (Apple Podcasts format)
+		const sentences = xmlDoc.querySelectorAll(
+			'span[*|unit="sentence"], span[podcasts\\:unit="sentence"]'
+		);
 
-			if (text) {
-				lines.push({
-					time: formatTime(begin),
-					rawTime: begin,
-					text: text,
-				});
-			}
-		});
+		if (sentences.length > 0) {
+			console.log(
+				"Found",
+				sentences.length,
+				"sentence elements (Apple Podcasts format)"
+			);
 
-		// If no timed elements found, try getting all <p> elements
+			sentences.forEach((sentence) => {
+				const begin = sentence.getAttribute("begin");
+				const end = sentence.getAttribute("end");
+
+				// Get word spans within this sentence and join with spaces
+				const wordSpans = sentence.querySelectorAll(
+					'span[*|unit="word"], span[podcasts\\:unit="word"]'
+				);
+				let text;
+				if (wordSpans.length > 0) {
+					text = Array.from(wordSpans)
+						.map((w) => w.textContent.trim())
+						.join(" ");
+				} else {
+					text = sentence.textContent.trim();
+				}
+
+				// Get speaker from parent <p> element
+				const parentP = sentence.closest("p");
+				let speaker = null;
+				if (parentP) {
+					speaker =
+						parentP.getAttribute("ttm:agent") ||
+						parentP.getAttribute("agent") ||
+						null;
+				}
+
+				if (text) {
+					lines.push({
+						time: formatTime(begin),
+						rawTime: begin,
+						rawEndTime: end,
+						endTime: formatTime(end),
+						text: text,
+						speaker: speaker,
+					});
+				}
+			});
+		} else {
+			// Fallback: Look for <p> tags with timing (standard TTML)
+			const pElements = xmlDoc.querySelectorAll("p[begin]");
+			console.log(
+				"Found",
+				pElements.length,
+				"paragraph elements (standard TTML format)"
+			);
+
+			pElements.forEach((el) => {
+				const begin = el.getAttribute("begin");
+				const end = el.getAttribute("end");
+
+				// Check if there are word-level spans inside
+				const wordSpans = el.querySelectorAll("span[begin]");
+				let text;
+				if (wordSpans.length > 0) {
+					text = Array.from(wordSpans)
+						.map((w) => w.textContent.trim())
+						.join(" ");
+				} else {
+					text = el.textContent.trim();
+				}
+
+				let speaker =
+					el.getAttribute("ttm:agent") ||
+					el.getAttribute("agent") ||
+					el.getAttribute("ttm:role") ||
+					el.getAttribute("role") ||
+					null;
+
+				if (text) {
+					lines.push({
+						time: formatTime(begin),
+						rawTime: begin,
+						rawEndTime: end,
+						endTime: formatTime(end),
+						text: text,
+						speaker: speaker,
+					});
+				}
+			});
+		}
+
+		// If still no elements found, try getting all <p> elements
 		if (lines.length === 0) {
 			const pElements = xmlDoc.querySelectorAll("p");
+			console.log("Fallback: found", pElements.length, "p elements");
 			pElements.forEach((el) => {
 				const text = el.textContent.trim();
 				if (text) {
 					lines.push({
 						time: "",
 						rawTime: "",
+						rawEndTime: "",
+						endTime: "",
 						text: text,
+						speaker: null,
 					});
 				}
 			});
 		}
 
+		console.log("Parsed", lines.length, "lines");
 		return lines;
 	}
 
@@ -514,6 +619,78 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 
 		return timeStr;
+	}
+
+	// Parse time string to seconds for comparison
+	function parseTimeToSeconds(timeStr) {
+		if (!timeStr) return null;
+		const match = timeStr.match(/^(\d{1,2}):(\d{2}):(\d{2})\.?(\d*)?/);
+		if (match) {
+			const hours = parseInt(match[1]);
+			const minutes = parseInt(match[2]);
+			const seconds = parseInt(match[3]);
+			const ms = match[4] ? parseInt(match[4].padEnd(3, "0").slice(0, 3)) : 0;
+			return hours * 3600 + minutes * 60 + seconds + ms / 1000;
+		}
+		return null;
+	}
+
+	// Group lines into readable paragraphs
+	function groupIntoParagraphs(lines, pauseThreshold = 1.5) {
+		if (lines.length === 0) return [];
+
+		const paragraphs = [];
+		let currentParagraph = {
+			startTime: lines[0].time,
+			endTime: lines[0].endTime || lines[0].time,
+			speaker: lines[0].speaker,
+			lines: [lines[0]],
+			text: lines[0].text,
+		};
+
+		for (let i = 1; i < lines.length; i++) {
+			const prevLine = lines[i - 1];
+			const currLine = lines[i];
+
+			// Calculate pause between previous end and current start
+			const prevEnd =
+				parseTimeToSeconds(prevLine.rawEndTime) ||
+				parseTimeToSeconds(prevLine.rawTime);
+			const currStart = parseTimeToSeconds(currLine.rawTime);
+			const pause = prevEnd && currStart ? currStart - prevEnd : 0;
+
+			// Check if we should start a new paragraph
+			const hasSentenceEnd = /[.!?]\s*$/.test(prevLine.text);
+			const speakerChanged =
+				currLine.speaker && currLine.speaker !== currentParagraph.speaker;
+			const longPause = pause >= pauseThreshold;
+			const paragraphTooLong = currentParagraph.text.split(/\s+/).length > 150;
+
+			if ((hasSentenceEnd && longPause) || speakerChanged || paragraphTooLong) {
+				// Finalize current paragraph
+				currentParagraph.endTime = prevLine.endTime || prevLine.time;
+				paragraphs.push(currentParagraph);
+
+				// Start new paragraph
+				currentParagraph = {
+					startTime: currLine.time,
+					endTime: currLine.endTime || currLine.time,
+					speaker: currLine.speaker,
+					lines: [currLine],
+					text: currLine.text,
+				};
+			} else {
+				// Continue current paragraph
+				currentParagraph.lines.push(currLine);
+				currentParagraph.text += " " + currLine.text;
+				currentParagraph.endTime = currLine.endTime || currLine.time;
+			}
+		}
+
+		// Don't forget the last paragraph
+		paragraphs.push(currentParagraph);
+
+		return paragraphs;
 	}
 
 	// =====================
@@ -618,8 +795,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			? `<p class="not-found-note">⚠️ Episode ID ${episode.id} not found in database (may have been removed from library)</p>`
 			: "";
 
-		const displayLines = filteredLines || episode.lines;
-
 		const highlight = (text) => {
 			if (!query) return escapeHtml(text);
 			const regex = new RegExp(`(${escapeRegex(query)})`, "gi");
@@ -631,6 +806,58 @@ document.addEventListener("DOMContentLoaded", () => {
 		const expandedClass = isExpanded ? "expanded" : "";
 		const collapsedClass = isExpanded ? "" : "collapsed";
 		const toggleText = isExpanded ? "Hide transcript" : "Show transcript";
+
+		// Generate paragraph-based content (reading view)
+		const paragraphs = episode.paragraphs || [];
+		let displayParagraphs = paragraphs;
+
+		// If searching, filter paragraphs that contain matches
+		if (query && filteredLines) {
+			const lowerQuery = query.toLowerCase();
+			displayParagraphs = paragraphs.filter((p) =>
+				p.text.toLowerCase().includes(lowerQuery)
+			);
+		}
+
+		const paragraphsHtml =
+			displayParagraphs.length === 0
+				? "<p>No transcript content found.</p>"
+				: displayParagraphs
+						.map((p) => {
+							const timeRange =
+								p.endTime && p.endTime !== p.startTime
+									? `${p.startTime} – ${p.endTime}`
+									: p.startTime;
+							const speakerLabel = p.speaker
+								? `<span class="speaker">${escapeHtml(p.speaker)}:</span> `
+								: "";
+							return `
+					<div class="paragraph">
+						<span class="paragraph-time">${timeRange}</span>
+						<p class="paragraph-text">${speakerLabel}${highlight(p.text)}</p>
+					</div>
+				`;
+						})
+						.join("");
+
+		// Generate line-based content (timestamped view) for search results
+		const displayLines = filteredLines || episode.lines;
+		const linesHtml =
+			displayLines.length === 0
+				? "<p>No transcript content found.</p>"
+				: displayLines
+						.map(
+							(line) => `
+				<div class="line">
+					<span class="time">${line.time}</span>
+					<span class="text">${highlight(line.text)}</span>
+				</div>
+			`
+						)
+						.join("");
+
+		const lineCount = episode.lines.length;
+		const paragraphCount = paragraphs.length;
 
 		card.innerHTML = `
             <button class="remove-episode-btn" title="Remove this transcript" aria-label="Remove transcript">&times;</button>
@@ -651,31 +878,26 @@ document.addEventListener("DOMContentLoaded", () => {
                     ${notFoundNote}
                     ${
 											query
-												? `<p class="match-count">🔍 ${displayLines.length} matches</p>`
+												? `<p class="match-count">🔍 ${displayParagraphs.length} sections with matches</p>`
 												: ""
 										}
                 </div>
             </div>
-            <button class="transcript-toggle ${expandedClass}" aria-expanded="${isExpanded}">
-                <span class="chevron">▶</span>
-                <span class="toggle-text">${toggleText}</span>
-                <span class="line-count">(${displayLines.length} lines)</span>
-            </button>
+            <div class="transcript-controls">
+                <button class="transcript-toggle ${expandedClass}" aria-expanded="${isExpanded}">
+                    <span class="chevron">▶</span>
+                    <span class="toggle-text">${toggleText}</span>
+                    <span class="line-count">(${paragraphCount} paragraphs)</span>
+                </button>
+                <div class="view-mode-toggle">
+                    <button class="view-mode-btn active" data-mode="reading" title="Reading view">📖</button>
+                    <button class="view-mode-btn" data-mode="timestamped" title="Timestamped view">⏱️</button>
+                    <button class="copy-btn" title="Copy transcript">📋</button>
+                </div>
+            </div>
             <div class="transcript-content ${collapsedClass}">
-                ${
-									displayLines.length === 0
-										? "<p>No transcript content found.</p>"
-										: displayLines
-												.map(
-													(line) => `
-                        <div class="line">
-                            <span class="time">${line.time}</span>
-                            <span class="text">${highlight(line.text)}</span>
-                        </div>
-                    `
-												)
-												.join("")
-								}
+                <div class="transcript-view reading-view">${paragraphsHtml}</div>
+                <div class="transcript-view timestamped-view" style="display: none;">${linesHtml}</div>
             </div>
         `;
 
@@ -697,6 +919,52 @@ document.addEventListener("DOMContentLoaded", () => {
 				transcriptContent.classList.remove("collapsed");
 				toggleBtn.setAttribute("aria-expanded", "true");
 				toggleTextSpan.textContent = "Hide transcript";
+			}
+		});
+
+		// View mode toggle
+		const viewModeBtns = card.querySelectorAll(".view-mode-btn");
+		const readingView = card.querySelector(".reading-view");
+		const timestampedView = card.querySelector(".timestamped-view");
+
+		viewModeBtns.forEach((btn) => {
+			btn.addEventListener("click", () => {
+				viewModeBtns.forEach((b) => b.classList.remove("active"));
+				btn.classList.add("active");
+
+				if (btn.dataset.mode === "reading") {
+					readingView.style.display = "block";
+					timestampedView.style.display = "none";
+				} else {
+					readingView.style.display = "none";
+					timestampedView.style.display = "block";
+				}
+			});
+		});
+
+		// Copy button
+		const copyBtn = card.querySelector(".copy-btn");
+		copyBtn.addEventListener("click", async () => {
+			// Get plain text version of transcript
+			const plainText = paragraphs
+				.map((p) => {
+					const speaker = p.speaker ? `${p.speaker}: ` : "";
+					return speaker + p.text;
+				})
+				.join("\n\n");
+
+			try {
+				await navigator.clipboard.writeText(plainText);
+				copyBtn.textContent = "✓";
+				setTimeout(() => {
+					copyBtn.textContent = "📋";
+				}, 2000);
+			} catch (err) {
+				console.error("Copy failed:", err);
+				copyBtn.textContent = "❌";
+				setTimeout(() => {
+					copyBtn.textContent = "📋";
+				}, 2000);
 			}
 		});
 

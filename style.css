@@ -395,9 +395,59 @@ h2 {
     transform: rotate(90deg);
 }
 
+/* Transcript Controls */
+.transcript-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+}
+
+.transcript-controls .transcript-toggle {
+    border-top: none;
+    margin-top: 0;
+    flex: 1;
+}
+
+.view-mode-toggle {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.view-mode-btn,
+.copy-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.view-mode-btn:hover,
+.copy-btn:hover {
+    background: #f0f0f0;
+}
+
+.view-mode-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.copy-btn {
+    margin-left: 0.5rem;
+}
+
 /* Transcript Content */
 .transcript-content {
-    max-height: 400px;
+    max-height: 600px;
     overflow-y: auto;
     padding-right: 0.5rem;
     font-size: 0.95rem;
@@ -430,6 +480,40 @@ h2 {
 
 .text {
     flex: 1;
+}
+
+/* Paragraph View (Reading Mode) */
+.paragraph {
+    margin-bottom: 1.25rem;
+    padding-left: 90px;
+    position: relative;
+}
+
+.paragraph-time {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-family: "SF Mono", Monaco, monospace;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    width: 80px;
+    user-select: none;
+}
+
+.paragraph-text {
+    margin: 0;
+    line-height: 1.7;
+    text-align: left;
+}
+
+.speaker {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Transcript Views */
+.transcript-view {
+    padding-top: 1rem;
 }
 
 /* Highlight for search matches */
