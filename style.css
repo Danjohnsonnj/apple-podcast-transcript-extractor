@@ -417,7 +417,8 @@ h2 {
 }
 
 .view-mode-btn,
-.copy-btn {
+.copy-btn,
+.export-btn {
     width: 36px;
     height: 36px;
     border: 1px solid var(--border);
@@ -432,7 +433,8 @@ h2 {
 }
 
 .view-mode-btn:hover,
-.copy-btn:hover {
+.copy-btn:hover,
+.export-btn:hover {
     background: #f0f0f0;
 }
 
@@ -441,7 +443,8 @@ h2 {
     border-color: var(--primary);
 }
 
-.copy-btn {
+.copy-btn,
+.export-btn {
     margin-left: 0.5rem;
 }
 

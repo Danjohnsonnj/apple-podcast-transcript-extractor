@@ -748,6 +748,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button class="view-mode-btn active" data-mode="reading" title="Reading view">📖</button>
                     <button class="view-mode-btn" data-mode="timestamped" title="Timestamped view">⏱️</button>
                     <button class="copy-btn" title="Copy transcript">📋</button>
+                    <button class="export-btn" title="Export as Markdown">💾</button>
                 </div>
             </div>
             <div class="transcript-content ${collapsedClass}">
@@ -823,6 +824,18 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 		});
 
+		// Export as Markdown button
+		const exportBtn = card.querySelector(".export-btn");
+		exportBtn.addEventListener("click", () => {
+			const markdown = generateMarkdown(episode, showName, title);
+			downloadFile(markdown, `${sanitizeFilename(title)}.md`, "text/markdown");
+
+			exportBtn.textContent = "✓";
+			setTimeout(() => {
+				exportBtn.textContent = "💾";
+			}, 2000);
+		});
+
 		resultsContainer.appendChild(card);
 
 		// Add remove button event listener
@@ -840,5 +853,63 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	function escapeRegex(string) {
 		return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	}
+
+	// Escape special Markdown characters in text
+	function escapeMarkdown(text) {
+		return text
+			.replace(/\\/g, "\\\\") // Backslashes first
+			.replace(/\$/g, "\\$") // Dollar signs (math mode)
+			.replace(/\*/g, "\\*") // Asterisks (bold/italic)
+			.replace(/_/g, "\\_") // Underscores (bold/italic)
+			.replace(/`/g, "\\`") // Backticks (code)
+			.replace(/\[/g, "\\[") // Square brackets (links)
+			.replace(/\]/g, "\\]")
+			.replace(/</g, "\\<") // Angle brackets (HTML)
+			.replace(/>/g, "\\>")
+			.replace(/\|/g, "\\|"); // Pipes (tables)
+	}
+
+	// Generate Markdown from episode paragraphs
+	function generateMarkdown(episode, showName, title) {
+		const paragraphs = episode.paragraphs || [];
+		let currentSpeaker = null;
+		let markdown = `# ${escapeMarkdown(title)}\n\n`;
+		markdown += `**Show:** ${escapeMarkdown(showName)}\n\n`;
+		markdown += `---\n\n`;
+
+		paragraphs.forEach((p) => {
+			// Add speaker heading if speaker changes
+			if (p.speaker && p.speaker !== currentSpeaker) {
+				currentSpeaker = p.speaker;
+				markdown += `**${escapeMarkdown(p.speaker)}:**\n\n`;
+			}
+
+			markdown += `${escapeMarkdown(p.text)}\n\n`;
+		});
+
+		return markdown.trim();
+	}
+
+	// Download a file to the user's computer
+	function downloadFile(content, filename, mimeType) {
+		const blob = new Blob([content], { type: mimeType });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = filename;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+	}
+
+	// Sanitize filename by removing invalid characters
+	function sanitizeFilename(name) {
+		return name
+			.replace(/[/\\?%*:|"<>]/g, "-")
+			.replace(/\s+/g, " ")
+			.trim()
+			.substring(0, 100);
 	}
 });
