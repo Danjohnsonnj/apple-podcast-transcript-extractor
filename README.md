@@ -106,4 +106,4 @@ MIT License – See [LICENSE](LICENSE) for details.
 
 ---
 
-Built with ❤️ for podcast lovers who want to search their transcripts.
+Built in collaboration with [Claude Opus 4.5](https://www.anthropic.com/news/claude-opus-4-5) and [VS Code Copilot](https://code.visualstudio.com/docs/copilot/overview).
