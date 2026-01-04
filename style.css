@@ -524,6 +524,29 @@ mark {
     border-radius: 3px;
 }
 
+/* No Results Message */
+.no-results {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--card-bg);
+    border-radius: 12px;
+    color: var(--text-secondary);
+}
+
+.no-results p {
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.no-results strong {
+    color: var(--text);
+}
+
+.no-results-hint {
+    font-size: 0.95rem;
+    margin-top: 1rem;
+}
+
 /* Editable fields */
 .editable {
     cursor: text;

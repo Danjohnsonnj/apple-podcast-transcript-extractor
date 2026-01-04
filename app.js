@@ -535,11 +535,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	const searchBtn = document.getElementById("search-btn");
 	const stopBtn = document.getElementById("stop-btn");
+	const clearSearchBtn = document.getElementById("clear-search-btn");
 	let searchCancelled = false;
 
 	// Search on button click
 	searchBtn.addEventListener("click", () => {
 		performSearch(searchInput.value.trim());
+	});
+
+	// Clear search button
+	clearSearchBtn.addEventListener("click", () => {
+		searchInput.value = "";
+		clearSearchBtn.style.display = "none";
+		resultCount.textContent = "";
+		resultsContainer.innerHTML = "";
+		episodes.forEach((ep) => renderEpisode(ep));
 	});
 
 	// Search on Enter key
@@ -561,6 +571,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		if (!query) {
 			resultCount.textContent = "";
+			clearSearchBtn.style.display = "none";
 			episodes.forEach((ep) => renderEpisode(ep));
 			return;
 		}
@@ -568,6 +579,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		// Show searching state
 		searchBtn.disabled = true;
 		stopBtn.style.display = "inline-block";
+		clearSearchBtn.style.display = "none";
 		resultCount.textContent = "Searching...";
 
 		const lowerQuery = query.toLowerCase();
@@ -603,12 +615,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		// Final results
 		if (!searchCancelled) {
-			resultCount.textContent = `${totalMatches} matches in ${matchingEpisodes} files`;
+			if (totalMatches === 0) {
+				resultCount.textContent = `0 matches in ${episodes.length} files`;
+				resultsContainer.innerHTML = `
+					<div class="no-results">
+						<p>😕 No matches found for "<strong>${escapeHtml(query)}</strong>"</p>
+						<p class="no-results-hint">Try a different search term or check your spelling.</p>
+					</div>
+				`;
+			} else {
+				resultCount.textContent = `${totalMatches} matches in ${matchingEpisodes} files`;
+			}
 		}
 
 		// Reset UI state
 		searchBtn.disabled = false;
 		stopBtn.style.display = "none";
+		clearSearchBtn.style.display = "inline-block";
 	}
 
 	// =====================
