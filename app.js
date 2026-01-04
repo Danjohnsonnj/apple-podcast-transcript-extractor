@@ -106,7 +106,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			const episodeCount = buildEpisodeMap();
 
 			dbStatus.className = "status-message success";
-			dbStatus.textContent = `✓ Database loaded! Found ${episodeCount} episodes.`;
+			dbStatus.textContent = `✓ Database loaded! Found ${episodeCount} episodes. Refresh page to load a different database.`;
+
+			// Hide the drop zone after successful load
+			dbDropZone.style.display = "none";
 		} catch (error) {
 			console.error("Database load error:", error);
 			dbStatus.className = "status-message error";
