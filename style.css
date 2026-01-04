@@ -1,0 +1,335 @@
+:root {
+    --primary: #007aff;
+    --success: #34c759;
+    --warning: #ff9500;
+    --bg: #f5f5f7;
+    --card-bg: #ffffff;
+    --text: #1d1d1f;
+    --text-secondary: #86868b;
+    --border: #d2d2d7;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 20px;
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+h2 {
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem 0;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+/* Step Sections */
+.step-section {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.instructions {
+    color: var(--text-secondary);
+    margin: 0 0 1rem 0;
+    font-size: 0.95rem;
+}
+
+/* Help Details */
+.help-details {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.help-details summary {
+    cursor: pointer;
+    color: var(--primary);
+    font-weight: 500;
+    padding: 0.5rem 0;
+}
+
+.help-details summary:hover {
+    text-decoration: underline;
+}
+
+.help-content {
+    background: #f0f4f8;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 0.5rem;
+}
+
+.help-content p {
+    margin: 0.5rem 0;
+}
+
+.help-content pre {
+    background: #1d1d1f;
+    color: #f5f5f7;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+}
+
+.help-content code {
+    font-family: "SF Mono", Monaco, "Courier New", monospace;
+}
+
+/* Drop Zone */
+.drop-zone {
+    background: var(--card-bg);
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 2.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.drop-zone.small {
+    padding: 1.5rem;
+}
+
+.drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--primary);
+    background-color: #f0f8ff;
+}
+
+.drop-zone .icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.drop-zone.small .icon {
+    font-size: 2rem;
+}
+
+.drop-zone p {
+    margin: 0.25rem 0;
+}
+
+.small {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Status Messages */
+.status-message {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    display: none;
+}
+
+.status-message.success {
+    display: block;
+    background: #e8f9ed;
+    color: #1a7d36;
+    border: 1px solid #b8e6c8;
+}
+
+.status-message.error {
+    display: block;
+    background: #fff0f0;
+    color: #c41e3a;
+    border: 1px solid #f5c6cb;
+}
+
+.status-message.info {
+    display: block;
+    background: #e8f4fd;
+    color: #0066cc;
+    border: 1px solid #b8d4f0;
+}
+
+/* Search Section */
+.search-section {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+#search-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#search-input:focus {
+    border-color: var(--primary);
+}
+
+.result-count {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+/* Episode Cards */
+.episode-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.meta-header {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.artwork {
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    background-color: #eee;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.meta-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.meta-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    word-wrap: break-word;
+}
+
+.show-name {
+    color: var(--primary);
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+    font-size: 0.95rem;
+}
+
+.file-name {
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0.5rem 0 0 0;
+    word-break: break-all;
+}
+
+.match-count {
+    font-size: 0.85rem;
+    color: var(--warning);
+    margin: 0.5rem 0 0 0;
+    font-weight: 500;
+}
+
+.not-found-note {
+    font-size: 0.8rem;
+    color: var(--warning);
+    margin: 0.5rem 0 0 0;
+    padding: 0.5rem;
+    background: rgba(255, 149, 0, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid var(--warning);
+}
+
+/* Transcript Content */
+.transcript-content {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.line {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+}
+
+.line:hover {
+    background: #f8f8f8;
+    border-radius: 4px;
+}
+
+.time {
+    font-family: "SF Mono", Monaco, monospace;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    min-width: 70px;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.text {
+    flex: 1;
+}
+
+/* Highlight for search matches */
+mark {
+    background-color: #fff3cd;
+    color: inherit;
+    padding: 0.1em 0.2em;
+    border-radius: 3px;
+}
+
+/* Editable fields */
+.editable {
+    cursor: text;
+    padding: 0.25rem 0.5rem;
+    margin: -0.25rem -0.5rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.editable:hover {
+    background: #f0f0f0;
+    border-color: var(--border);
+}
+
+.editable:focus {
+    outline: none;
+    background: #fff;
+    border-color: var(--primary);
+}

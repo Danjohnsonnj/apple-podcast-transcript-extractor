@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Podcast Transcript Extractor</title>
+	<link rel="stylesheet" href="style.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
+</head>
+
+<body>
+	<div class="container">
+		<header>
+			<h1>Podcast Transcript Extractor</h1>
+			<p class="subtitle">Extract transcripts from Apple Podcast cache files</p>
+		</header>
+
+		<!-- Step 1: Database Upload -->
+		<section class="step-section" id="step-1">
+			<h2>Step 1: Load Podcast Database (Optional but Recommended)</h2>
+			<p class="instructions">
+				This allows the app to automatically match transcript files with episode metadata (title, show name, artwork).
+			</p>
+			<details class="help-details">
+				<summary>📁 How to find the database file</summary>
+				<div class="help-content">
+					<p>Open <strong>Finder</strong> and press <code>Cmd + Shift + G</code>, then paste:</p>
+					<pre><code>~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Documents/</code></pre>
+					<p>Look for a file named <code>MTLibrary.sqlite</code> and drag it below.</p>
+					<p><em>Note: This file stays on your computer. Nothing is uploaded to any server.</em></p>
+				</div>
+			</details>
+			<div id="db-drop-zone" class="drop-zone small">
+				<div class="icon">🗄️</div>
+				<p>Drag & Drop <code>MTLibrary.sqlite</code> here</p>
+				<input type="file" id="db-file-input" accept=".sqlite,.sqlite3,.db" hidden>
+			</div>
+			<div id="db-status" class="status-message"></div>
+		</section>
+
+		<!-- Step 2: TTML Upload -->
+		<section class="step-section" id="step-2">
+			<h2>Step 2: Load Transcript Files</h2>
+			<p class="instructions">
+				Drag and drop one or more <code>.ttml</code> transcript files from the cache folder.
+			</p>
+			<details class="help-details">
+				<summary>📁 How to find transcript files</summary>
+				<div class="help-content">
+					<p>Open <strong>Finder</strong> and press <code>Cmd + Shift + G</code>, then paste:</p>
+					<pre><code>~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache/Assets/TTML</code></pre>
+					<p>You'll see subfolders containing <code>transcript_XXXXXXXXXX.ttml</code> files.</p>
+					<p><strong>Tip:</strong> To copy all TTML files to a single folder, run this in Terminal:</p>
+					<pre><code>find ~/Library/Group\ Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache/Assets/TTML -name "*.ttml" -exec cp {} ~/Desktop/TTML_Transcripts \;</code></pre>
+				</div>
+			</details>
+			<div id="ttml-drop-zone" class="drop-zone">
+				<div class="icon">📂</div>
+				<p>Drag & Drop <code>transcript_*.ttml</code> files here</p>
+				<p class="small">or click to browse</p>
+				<input type="file" id="ttml-file-input" accept=".ttml" multiple hidden>
+			</div>
+		</section>
+
+		<!-- Search -->
+		<section class="search-section" id="search-section" style="display: none;">
+			<input type="text" id="search-input" placeholder="Search transcripts..." autocomplete="off">
+			<span id="result-count" class="result-count"></span>
+		</section>
+
+		<!-- Results -->
+		<div id="results-container"></div>
+	</div>
+	<script src="app.js"></script>
+</body>
+
+</html>
