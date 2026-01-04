@@ -117,11 +117,17 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 
+	// Helper: Extract numeric ID (10+ digits) from a string
+	function extractNumericId(str) {
+		if (!str) return null;
+		const match = String(str).match(/(\d{10,})/);
+		return match ? match[1] : null;
+	}
+
 	function buildEpisodeMap() {
 		episodeMap.clear();
 
-		// Try to find the episodes table
-		// Common table names in Apple Podcasts: ZMTEPISODE, ZMTPODCAST
+		// Check for required tables
 		let tables = [];
 		try {
 			const tableResult = db.exec(
@@ -130,57 +136,18 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (tableResult.length > 0) {
 				tables = tableResult[0].values.map((row) => row[0]);
 			}
-			console.log("Database tables:", tables);
 		} catch (e) {
 			console.error("Could not list tables:", e);
+			return 0;
 		}
 
-		// Try ZMTEPISODE table (common in Apple Podcasts)
-		if (tables.includes("ZMTEPISODE")) {
-			try {
-				// First, let's see the schema for both tables
-				const episodeSchema = db.exec("PRAGMA table_info(ZMTEPISODE)");
-				if (episodeSchema.length > 0) {
-					console.log(
-						"ZMTEPISODE columns:",
-						episodeSchema[0].values.map((r) => r[1])
-					);
-				}
+		if (!tables.includes("ZMTEPISODE")) {
+			console.warn("ZMTEPISODE table not found in database");
+			return 0;
+		}
 
-				const podcastSchema = db.exec("PRAGMA table_info(ZMTPODCAST)");
-				if (podcastSchema.length > 0) {
-					console.log(
-						"ZMTPODCAST columns:",
-						podcastSchema[0].values.map((r) => r[1])
-					);
-				}
-
-				// First, try a simple query to verify data exists
-				const countResult = db.exec("SELECT COUNT(*) FROM ZMTEPISODE");
-				console.log(
-					"Total episodes in database:",
-					countResult[0]?.values[0][0]
-				);
-
-				// Test a simple query first to see what's in the table
-				const testQuery = db.exec(
-					"SELECT ZSTORETRACKID, ZTITLE, ZPODCAST FROM ZMTEPISODE LIMIT 5"
-				);
-				console.log("Test query result:", testQuery);
-				if (testQuery.length > 0) {
-					console.log("Test query columns:", testQuery[0].columns);
-					console.log("Test query first rows:", testQuery[0].values);
-				}
-
-				// Check if ZMTPODCAST has data
-				const podcastCount = db.exec("SELECT COUNT(*) FROM ZMTPODCAST");
-				console.log(
-					"Total podcasts in database:",
-					podcastCount[0]?.values[0][0]
-				);
-
-				// Simpler query - only select columns we know exist
-				const query = `
+		try {
+			const query = `
                     SELECT 
                         e.ZSTORETRACKID,
                         e.ZASSETURL,
@@ -200,176 +167,79 @@ document.addEventListener("DOMContentLoaded", () => {
                     LEFT JOIN ZMTPODCAST p ON e.ZPODCAST = p.Z_PK
                 `;
 
-				console.log("Executing main query...");
-				let result;
-				try {
-					result = db.exec(query);
-					console.log("Query result length:", result.length);
-					if (result.length > 0) {
-						console.log("Query returned", result[0].values.length, "rows");
-					}
-				} catch (queryError) {
-					console.error("Query failed:", queryError);
-					// Fallback: just query episode table without join
-					console.log("Trying fallback query without JOIN...");
-					result = db.exec(`
-						SELECT 
-							ZSTORETRACKID,
-							ZASSETURL,
-							ZTITLE,
-							ZCLEANEDTITLE,
-							ZDURATION,
-							ZUUID,
-							ZGUID,
-							ZENTITLEDTRANSCRIPTIDENTIFIER,
-							ZFREETRANSCRIPTIDENTIFIER,
-							ZENCLOSUREURL,
-							ZPODCAST
-						FROM ZMTEPISODE
-					`);
-					console.log(
-						"Fallback query returned",
-						result[0]?.values?.length || 0,
-						"rows"
-					);
-				}
-
-				if (result.length > 0) {
-					const columns = result[0].columns;
-					const rows = result[0].values;
-
-					console.log(`Processing ${rows.length} rows`);
-
-					// Log first few rows for debugging
-					console.log(
-						"Sample episode data:",
-						rows.slice(0, 3).map((row) => {
-							const obj = {};
-							columns.forEach((col, i) => (obj[col] = row[i]));
-							return obj;
-						})
-					);
-
-					rows.forEach((row) => {
-						const episode = {};
-						columns.forEach((col, i) => {
-							episode[col] = row[i];
-						});
-
-						const metaData = {
-							title:
-								episode.ZTITLE || episode.ZCLEANEDTITLE || "Unknown Episode",
-							showName: episode.podcast_title || "Unknown Show",
-							author: episode.ZAUTHOR,
-							artworkUrl: episode.ZIMAGEURL,
-							duration: episode.ZDURATION,
-							guid: episode.ZGUID,
-						};
-
-						// Map by ZSTORETRACKID (this is likely the ID in the filename)
-						if (episode.ZSTORETRACKID) {
-							episodeMap.set(String(episode.ZSTORETRACKID), metaData);
-						}
-
-						// Map by transcript identifiers
-						if (episode.ZENTITLEDTRANSCRIPTIDENTIFIER) {
-							// Extract numeric ID if present
-							const idMatch = String(
-								episode.ZENTITLEDTRANSCRIPTIDENTIFIER
-							).match(/(\d{10,})/);
-							if (idMatch) {
-								episodeMap.set(idMatch[1], metaData);
-							}
-							episodeMap.set(
-								String(episode.ZENTITLEDTRANSCRIPTIDENTIFIER),
-								metaData
-							);
-						}
-
-						if (episode.ZFREETRANSCRIPTIDENTIFIER) {
-							const idMatch = String(episode.ZFREETRANSCRIPTIDENTIFIER).match(
-								/(\d{10,})/
-							);
-							if (idMatch) {
-								episodeMap.set(idMatch[1], metaData);
-							}
-							episodeMap.set(
-								String(episode.ZFREETRANSCRIPTIDENTIFIER),
-								metaData
-							);
-						}
-
-						// Map by ZASSETURL ID
-						if (episode.ZASSETURL) {
-							const idMatch = String(episode.ZASSETURL).match(/(\d{10,})/);
-							if (idMatch) {
-								episodeMap.set(idMatch[1], metaData);
-							}
-						}
-
-						// Map by ZENCLOSUREURL ID
-						if (episode.ZENCLOSUREURL) {
-							const idMatch = String(episode.ZENCLOSUREURL).match(/(\d{10,})/);
-							if (idMatch) {
-								episodeMap.set(idMatch[1], metaData);
-							}
-						}
-
-						// Map by UUID
-						if (episode.ZUUID) {
-							episodeMap.set(String(episode.ZUUID), metaData);
-						}
-
-						// Map by GUID
-						if (episode.ZGUID) {
-							episodeMap.set(String(episode.ZGUID), metaData);
-						}
-					});
-				}
-			} catch (e) {
-				console.error("Error querying ZMTEPISODE:", e);
+			let result;
+			try {
+				result = db.exec(query);
+			} catch (queryError) {
+				// Fallback: query episode table without join
+				result = db.exec(`
+					SELECT 
+						ZSTORETRACKID, ZASSETURL, ZTITLE, ZCLEANEDTITLE,
+						ZDURATION, ZUUID, ZGUID,
+						ZENTITLEDTRANSCRIPTIDENTIFIER, ZFREETRANSCRIPTIDENTIFIER,
+						ZENCLOSUREURL, ZPODCAST
+					FROM ZMTEPISODE
+				`);
 			}
+
+			if (result.length === 0) return 0;
+
+			const columns = result[0].columns;
+			const rows = result[0].values;
+
+			rows.forEach((row) => {
+				// Convert row array to object
+				const episode = {};
+				columns.forEach((col, i) => {
+					episode[col] = row[i];
+				});
+
+				const metadata = {
+					title: episode.ZTITLE || episode.ZCLEANEDTITLE || "Unknown Episode",
+					showName: episode.podcast_title || "Unknown Show",
+					author: episode.ZAUTHOR,
+					artworkUrl: episode.ZIMAGEURL,
+					duration: episode.ZDURATION,
+					guid: episode.ZGUID,
+				};
+
+				// Helper to add ID mappings
+				const addMapping = (value) => {
+					if (!value) return;
+					episodeMap.set(String(value), metadata);
+					const numericId = extractNumericId(value);
+					if (numericId) {
+						episodeMap.set(numericId, metadata);
+					}
+				};
+
+				// Map by various identifiers for flexible lookup
+				addMapping(episode.ZSTORETRACKID);
+				addMapping(episode.ZENTITLEDTRANSCRIPTIDENTIFIER);
+				addMapping(episode.ZFREETRANSCRIPTIDENTIFIER);
+				addMapping(episode.ZASSETURL);
+				addMapping(episode.ZENCLOSUREURL);
+				addMapping(episode.ZUUID);
+				addMapping(episode.ZGUID);
+			});
+		} catch (e) {
+			console.error("Error building episode map:", e);
 		}
 
-		// Log some keys from the map
-		console.log(
-			"Sample episode map keys:",
-			Array.from(episodeMap.keys()).slice(0, 10)
-		);
-
-		console.log(`Built episode map with ${episodeMap.size} entries`);
 		return episodeMap.size;
 	}
 
 	function lookupMetadata(assetId) {
-		// Try direct lookup
+		// Try direct lookup first (most common case)
 		if (episodeMap.has(assetId)) {
-			console.log(`Direct match found for ${assetId}`);
 			return episodeMap.get(assetId);
 		}
 
 		// Try partial match - key contains assetId
 		for (const [key, value] of episodeMap) {
 			if (key.includes(assetId)) {
-				console.log(`Partial match: key "${key}" contains "${assetId}"`);
 				return value;
 			}
-		}
-
-		// Find similar IDs (same prefix) to help debug
-		const prefix = assetId.substring(0, 6);
-		const similarKeys = [];
-		for (const key of episodeMap.keys()) {
-			if (key.startsWith(prefix) && /^\d+$/.test(key)) {
-				similarKeys.push(key);
-				if (similarKeys.length >= 5) break;
-			}
-		}
-		if (similarKeys.length > 0) {
-			console.log(
-				`No match for ${assetId}. Similar IDs in database:`,
-				similarKeys
-			);
 		}
 
 		return null;
@@ -401,42 +271,22 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 
 	function handleTTMLFiles(files) {
-		console.log("handleTTMLFiles called with", files.length, "files");
 		Array.from(files).forEach(processFile);
 	}
 
 	async function processFile(file) {
-		console.log("processFile called for:", file.name);
 		try {
-			// Extract ID from filename
+			// Extract ID from filename (e.g., transcript_1000672687584.ttml)
 			const idMatch = file.name.match(/transcript[_-]?(\d+)/i);
 			const assetId = idMatch ? idMatch[1] : null;
 
-			console.log(`Processing file: ${file.name}`);
-			console.log(`Extracted asset ID: ${assetId}`);
-			console.log(`Episode map size: ${episodeMap.size}`);
-
-			// Read file content
-			console.log("Reading file content...");
+			// Read and parse file
 			const textContent = await readFileAsText(file);
-			console.log("File content read, length:", textContent.length);
-
-			// Parse TTML
-			console.log("Parsing TTML...");
 			const lines = parseTTML(textContent);
-			console.log("Parsed", lines.length, "lines");
-
-			// Group lines into readable paragraphs
-			console.log("Grouping into paragraphs...");
 			const paragraphs = groupIntoParagraphs(lines);
-			console.log("Created", paragraphs.length, "paragraphs");
 
 			// Lookup metadata from database
-			let metadata = null;
-			if (assetId) {
-				metadata = lookupMetadata(assetId);
-				console.log(`Lookup result for ${assetId}:`, metadata);
-			}
+			const metadata = assetId ? lookupMetadata(assetId) : null;
 
 			// Create episode object
 			const episode = {
@@ -459,9 +309,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 			// Render
 			renderEpisode(episode);
-			console.log("Successfully rendered episode:", episode.id);
 		} catch (error) {
-			console.error("Error processing file:", file.name, error);
+			console.error(`Error processing ${file.name}:`, error);
 		}
 	}
 
@@ -490,12 +339,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 
 		if (sentences.length > 0) {
-			console.log(
-				"Found",
-				sentences.length,
-				"sentence elements (Apple Podcasts format)"
-			);
-
 			sentences.forEach((sentence) => {
 				const begin = sentence.getAttribute("begin");
 				const end = sentence.getAttribute("end");
@@ -537,11 +380,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		} else {
 			// Fallback: Look for <p> tags with timing (standard TTML)
 			const pElements = xmlDoc.querySelectorAll("p[begin]");
-			console.log(
-				"Found",
-				pElements.length,
-				"paragraph elements (standard TTML format)"
-			);
 
 			pElements.forEach((el) => {
 				const begin = el.getAttribute("begin");
@@ -581,7 +419,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		// If still no elements found, try getting all <p> elements
 		if (lines.length === 0) {
 			const pElements = xmlDoc.querySelectorAll("p");
-			console.log("Fallback: found", pElements.length, "p elements");
 			pElements.forEach((el) => {
 				const text = el.textContent.trim();
 				if (text) {
@@ -597,7 +434,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			});
 		}
 
-		console.log("Parsed", lines.length, "lines");
 		return lines;
 	}
 
@@ -700,7 +536,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	const searchBtn = document.getElementById("search-btn");
 	const stopBtn = document.getElementById("stop-btn");
 	let searchCancelled = false;
-	let isSearching = false;
 
 	// Search on button click
 	searchBtn.addEventListener("click", () => {
@@ -731,7 +566,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 
 		// Show searching state
-		isSearching = true;
 		searchBtn.disabled = true;
 		stopBtn.style.display = "inline-block";
 		resultCount.textContent = "Searching...";
@@ -773,7 +607,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 
 		// Reset UI state
-		isSearching = false;
 		searchBtn.disabled = false;
 		stopBtn.style.display = "none";
 	}
@@ -856,7 +689,6 @@ document.addEventListener("DOMContentLoaded", () => {
 						)
 						.join("");
 
-		const lineCount = episode.lines.length;
 		const paragraphCount = paragraphs.length;
 
 		card.innerHTML = `
