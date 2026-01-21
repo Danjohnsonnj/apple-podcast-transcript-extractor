@@ -52,7 +52,7 @@
 					<pre><code>~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache/Assets/TTML</code></pre>
 					<p>You'll see subfolders containing <code>transcript_XXXXXXXXXX.ttml</code> files.</p>
 					<p><strong>Tip:</strong> To copy all TTML files to a single folder, run this in Terminal:</p>
-					<pre><code>find ~/Library/Group\ Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache/Assets/TTML -name "*.ttml" -exec cp {} ~/Desktop/TTML_Transcripts \;</code></pre>
+					<pre><code>fmkdir -p ~/Local\ Documents/TTML && find ~/Library/Group\ Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache/Assets/TTML -name "*.ttml" -exec cp {} ~/Local\ Documents/TTML/ \;</code></pre>
 				</div>
 			</details>
 			<div id="ttml-drop-zone" class="drop-zone">
