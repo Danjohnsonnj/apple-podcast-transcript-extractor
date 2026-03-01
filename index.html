@@ -72,6 +72,30 @@
 			</div>
 		</section>
 
+		<!-- Optional: Finding MP3 Files -->
+		<section class="step-section" id="mp3-files">
+			<h2>Find Downloaded Podcast MP3 Files (Optional)</h2>
+			<p class="instructions">
+				Need to access the actual audio files? They're stored in the Podcasts app cache.
+			</p>
+			<details class="help-details">
+				<summary>📁 How to find downloaded MP3 files</summary>
+				<div class="help-content">
+					<p>Downloaded MP3 files from the macOS Podcast app are hidden deep within the system cache, not in your
+						standard Downloads folder. These files often have scrambled, non-descriptive names, making them difficult to
+						identify manually.</p>
+					<p>Open <strong>Finder</strong> and press <code>Cmd + Shift + G</code>, then paste:</p>
+					<div class="code-block-wrapper">
+						<button class="copy-code-btn" aria-label="Copy to clipboard">📋</button>
+						<pre><code>~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache</code></pre>
+					</div>
+					<p><strong>Tip:</strong> You can also access this via Finder by clicking "Go" in the top menu bar, holding the
+						<code>Option</code> key, selecting "Library", then navigating to
+						<code>Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache</code>.</p>
+				</div>
+			</details>
+		</section>
+
 		<!-- Transcript Management -->
 		<section class="transcript-management" id="transcript-management" style="display: none;">
 			<span id="episode-count" class="episode-count">0 transcripts loaded</span>
