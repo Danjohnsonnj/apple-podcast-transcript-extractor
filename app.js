@@ -21,6 +21,32 @@ document.addEventListener("DOMContentLoaded", () => {
 	let episodes = []; // Loaded transcript data
 
 	// =====================
+	// Code Block Copy Buttons
+	// =====================
+
+	document.querySelectorAll(".copy-code-btn").forEach((btn) => {
+		btn.addEventListener("click", async () => {
+			const codeBlock = btn.nextElementSibling?.querySelector("code");
+			if (!codeBlock) return;
+
+			const text = codeBlock.textContent;
+			try {
+				await navigator.clipboard.writeText(text);
+				btn.textContent = "✓";
+				setTimeout(() => {
+					btn.textContent = "📋";
+				}, 2000);
+			} catch (err) {
+				console.error("Copy failed:", err);
+				btn.textContent = "❌";
+				setTimeout(() => {
+					btn.textContent = "📋";
+				}, 2000);
+			}
+		});
+	});
+
+	// =====================
 	// Transcript Management
 	// =====================
 
@@ -131,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		let tables = [];
 		try {
 			const tableResult = db.exec(
-				"SELECT name FROM sqlite_master WHERE type='table'"
+				"SELECT name FROM sqlite_master WHERE type='table'",
 			);
 			if (tableResult.length > 0) {
 				tables = tableResult[0].values.map((row) => row[0]);
@@ -336,7 +362,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		// First, try to find sentence-level spans (Apple Podcasts format)
 		const sentences = xmlDoc.querySelectorAll(
-			'span[*|unit="sentence"], span[podcasts\\:unit="sentence"]'
+			'span[*|unit="sentence"], span[podcasts\\:unit="sentence"]',
 		);
 
 		if (sentences.length > 0) {
@@ -346,7 +372,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 				// Get word spans within this sentence and join with spaces
 				const wordSpans = sentence.querySelectorAll(
-					'span[*|unit="word"], span[podcasts\\:unit="word"]'
+					'span[*|unit="word"], span[podcasts\\:unit="word"]',
 				);
 				let text;
 				if (wordSpans.length > 0) {
@@ -596,7 +622,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 
 			const matchingLines = episode.lines.filter((line) =>
-				line.text.toLowerCase().includes(lowerQuery)
+				line.text.toLowerCase().includes(lowerQuery),
 			);
 
 			if (matchingLines.length > 0) {
@@ -672,7 +698,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (query && filteredLines) {
 			const lowerQuery = query.toLowerCase();
 			displayParagraphs = paragraphs.filter((p) =>
-				p.text.toLowerCase().includes(lowerQuery)
+				p.text.toLowerCase().includes(lowerQuery),
 			);
 		}
 
@@ -690,10 +716,10 @@ document.addEventListener("DOMContentLoaded", () => {
 								: null;
 							const speakerLabel = displaySpeaker
 								? `<span class="speaker" contenteditable="true" data-original-speaker="${escapeHtml(
-										p.speaker
-								  )}" title="Click to rename speaker">${escapeHtml(
-										displaySpeaker
-								  )}:</span> `
+										p.speaker,
+									)}" title="Click to rename speaker">${escapeHtml(
+										displaySpeaker,
+									)}:</span> `
 								: "";
 							return `
 					<div class="paragraph">
@@ -716,7 +742,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					<span class="time">${line.time}</span>
 					<span class="text">${highlight(line.text)}</span>
 				</div>
-			`
+			`,
 						)
 						.join("");
 
@@ -732,10 +758,10 @@ document.addEventListener("DOMContentLoaded", () => {
 								}
                 <div class="meta-info">
                     <p class="show-name" contenteditable="true" title="Click to edit">${escapeHtml(
-											showName
+											showName,
 										)}</p>
                     <h3 contenteditable="true" title="Click to edit">${escapeHtml(
-											title
+											title,
 										)}</h3>
                     <p class="file-name">📄 ${escapeHtml(episode.filename)}</p>
                     ${notFoundNote}
@@ -820,7 +846,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					// Update all instances of this speaker in the card
 					card
 						.querySelectorAll(
-							`.speaker[data-original-speaker="${originalSpeaker}"]`
+							`.speaker[data-original-speaker="${originalSpeaker}"]`,
 						)
 						.forEach((s) => {
 							s.textContent = newName + ":";
@@ -830,7 +856,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					episode.speakerMap.delete(originalSpeaker);
 					card
 						.querySelectorAll(
-							`.speaker[data-original-speaker="${originalSpeaker}"]`
+							`.speaker[data-original-speaker="${originalSpeaker}"]`,
 						)
 						.forEach((s) => {
 							s.textContent = originalSpeaker + ":";

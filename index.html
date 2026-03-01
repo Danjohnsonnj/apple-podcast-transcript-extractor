@@ -26,7 +26,10 @@
 				<summary>📁 How to find the database file</summary>
 				<div class="help-content">
 					<p>Open <strong>Finder</strong> and press <code>Cmd + Shift + G</code>, then paste:</p>
-					<pre><code>~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Documents/</code></pre>
+					<div class="code-block-wrapper">
+						<button class="copy-code-btn" aria-label="Copy to clipboard">📋</button>
+						<pre><code>~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Documents/</code></pre>
+					</div>
 					<p>Look for a file named <code>MTLibrary.sqlite</code> and drag it below.</p>
 					<p><em>Note: This file stays on your computer. Nothing is uploaded to any server.</em></p>
 				</div>
@@ -49,10 +52,16 @@
 				<summary>📁 How to find transcript files</summary>
 				<div class="help-content">
 					<p>Open <strong>Finder</strong> and press <code>Cmd + Shift + G</code>, then paste:</p>
-					<pre><code>~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache/Assets/TTML</code></pre>
+					<div class="code-block-wrapper">
+						<button class="copy-code-btn" aria-label="Copy to clipboard">📋</button>
+						<pre><code>~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache/Assets/TTML</code></pre>
+					</div>
 					<p>You'll see subfolders containing <code>transcript_XXXXXXXXXX.ttml</code> files.</p>
 					<p><strong>Tip:</strong> To copy all TTML files to a single folder, run this in Terminal:</p>
-					<pre><code>fmkdir -p ~/Local\ Documents/TTML && find ~/Library/Group\ Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache/Assets/TTML -name "*.ttml" -exec cp {} ~/Local\ Documents/TTML/ \;</code></pre>
+					<div class="code-block-wrapper">
+						<button class="copy-code-btn" aria-label="Copy to clipboard">📋</button>
+						<pre><code>mkdir -p ~/Local\ Documents/TTML && find ~/Library/Group\ Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache/Assets/TTML -name "*.ttml" -exec cp {} ~/Local\ Documents/TTML/ \;</code></pre>
+					</div>
 				</div>
 			</details>
 			<div id="ttml-drop-zone" class="drop-zone">

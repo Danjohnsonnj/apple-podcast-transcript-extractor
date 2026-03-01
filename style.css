@@ -448,6 +448,33 @@ h2 {
     margin-left: 0.5rem;
 }
 
+/* Code Block Copy Button */
+.code-block-wrapper {
+    position: relative;
+}
+
+.copy-code-btn {
+    width: 36px;
+    height: 36px;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.copy-code-btn:hover {
+    background: #f0f0f0;
+}
+
 /* Transcript Content */
 .transcript-content {
     max-height: 600px;
